@@ -238,6 +238,8 @@ int main(int argc, char* argv[])
 
 		//store image to matrix
 		capture.read(cameraFeed);
+		if(!cameraFeed.empty()){
+		  
 		//convert frame from BGR to HSV colorspace
 		cvtColor(cameraFeed, HSV, COLOR_BGR2HSV);
 		//filter HSV image between values and store filtered image to
@@ -262,6 +264,12 @@ int main(int argc, char* argv[])
 		//delay 30ms so that screen can refresh.
 		//image will not appear without this waitKey() command
 		waitKey(30);
+		}
+		else
+		{
+			printf("CameraFeed is empty\n");
+			exit(1);
+		}
 	}
 
 	return 0;
