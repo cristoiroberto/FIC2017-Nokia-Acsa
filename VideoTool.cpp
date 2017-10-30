@@ -1,10 +1,17 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <unistd.h>
 //#include <opencv2\highgui.h>
 #include "opencv2/highgui/highgui.hpp"
 //#include <opencv2\cv.h>
 #include "opencv2/opencv.hpp"
+#define PORT_NO 20232
+#define IP 193.226.12.217
 
 using namespace std;
 using namespace cv;
@@ -23,6 +30,8 @@ int S_MIN_2 = 23;
 int S_MAX_2 = 218;
 int V_MIN_2 = 228;
 int V_MAX_2 = 256;
+
+char move_command;
 
 //default capture width and height
 const int FRAME_WIDTH = 640;
@@ -203,7 +212,11 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed) {
 }
 int main(int argc, char* argv[])
 {
+	int sockfd, n;
+    	struct sockaddr_in serv_addr;
+    	struct hostent *server;
 
+/*
 	//some boolean variables for different functionality within this
 	//program
 	bool trackObjects = true;
@@ -230,12 +243,31 @@ int main(int argc, char* argv[])
 	//start an infinite loop where webcam feed is copied to cameraFeed matrix
 	//all of our operations will be performed within this loop
 
-
+*/
+	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+	{
+ 	 perror("socket failed");
+        exit(EXIT_FAILURE);
+	}
+        server = gethostbyname("193.226.12.217");
+        
+        serv_addr.sin_family = AF_INET;
+	bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);
+    	serv_addr.sin_port = htons(PORT_NO);
+    
+	  if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+		printf("ERROR connecting");
+		}
+		else
+		{
+		printf("Connected");
+		}
+	   
 
 
 	while (1) {
 
-
+		/*
 		//store image to matrix
 		capture.read(cameraFeed);
 		if(!cameraFeed.empty()){
@@ -269,6 +301,25 @@ int main(int argc, char* argv[])
 		{
 			printf("CameraFeed is empty\n");
 			exit(1);
+		} */
+
+		scanf("%c",&move_command);
+		
+		switch(move_command)
+		{
+		 case 'f':write(sockfd,"f\n",1);
+		          break;
+		 case 'b':write(sockfd,"b\n",1);
+                          break;
+		 case 'l':write(sockfd,"l\n",1);
+			  break;
+		 case 'r':write(sockfd,"r\n",1);
+		          break;
+	       	 case 's':write(sockfd,"s\n",1);
+			  break;
+
+		default:
+		  break;
 		}
 	}
 
