@@ -32,6 +32,7 @@ int V_MIN_2 = 228;
 int V_MAX_2 = 256;
 
 char move_command;
+int sockfd, n;
 
 //default capture width and height
 const int FRAME_WIDTH = 640;
@@ -48,6 +49,8 @@ const std::string windowName2 = "Thresholded Image";
 const std::string windowName3 = "After Morphological Operations";
 const std::string trackbarWindowName = "Trackbars";
 const std::string trackbar2WindowName = "Trackbars2";
+
+void run(char cmdlist[]);
 
 
 void on_mouse(int e, int x, int y, int d, void *ptr)
@@ -212,9 +215,10 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed) {
 }
 int main(int argc, char* argv[])
 {
-	int sockfd, n;
+	
     	struct sockaddr_in serv_addr;
     	struct hostent *server;
+	char command_list[]="fsrls";
 
 /*
 	//some boolean variables for different functionality within this
@@ -264,8 +268,9 @@ int main(int argc, char* argv[])
 		}
 	   
 
-
-	while (1) {
+	run(command_list);
+	
+/* while (1) {
 
 		/*
 		//store image to matrix
@@ -301,7 +306,7 @@ int main(int argc, char* argv[])
 		{
 			printf("CameraFeed is empty\n");
 			exit(1);
-		} */
+		} 
 
 		scanf("%c",&move_command);
 		
@@ -322,6 +327,46 @@ int main(int argc, char* argv[])
 		  break;
 		}
 	}
+	*/
 
 	return 0;
+}
+
+void run(char cmdlist[])
+{
+	int i;
+	for(i=0;i<strlen(cmdlist);i++)
+	{
+		switch(cmdlist[i])
+		{
+		 case 'f':write(sockfd,"f\n",1);
+
+		          break;
+
+		 case 'b':write(sockfd,"b\n",1);
+
+                          break;
+		 case 'l':write(sockfd,"l\n",1);
+
+			  break;
+
+		 case 'r':write(sockfd,"r\n",1);
+
+		          break;
+
+	       	 case 's':write(sockfd,"s\n",1);
+
+			  break;
+
+
+		default:
+
+		  break;
+		}
+		sleep(1);
+	}
+	write(sockfd,"s\n",1);
+	
+
+
 }
