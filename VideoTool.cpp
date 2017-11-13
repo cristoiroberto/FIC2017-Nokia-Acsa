@@ -15,9 +15,10 @@
 
 using namespace std;
 using namespace cv;
+float distanta(int x,int y, int x1,int y1);
 //initial min and max HSV filter values.
 //these will be changed using trackbars
-int H_MIN = 29;
+int H_MIN = 55;
 int H_MAX = 180;
 int S_MIN = 50;
 int S_MAX = 225;
@@ -25,11 +26,21 @@ int V_MIN = 0;
 int V_MAX = 256;
 
 int H_MIN_2 = 28;
-int H_MAX_2 = 240;
+int H_MAX_2 = 160;
 int S_MIN_2 = 23;
 int S_MAX_2 = 218;
 int V_MIN_2 = 228;
 int V_MAX_2 = 256;
+
+typedef struct coorda {
+	int H_MIN;
+	int H_MAX;
+	int S_MIN;
+	int S_MAX;
+	int V_MIN;
+	int V_MAX;
+} coord;
+
 
 char move_command;
 int sockfd, n;
@@ -215,12 +226,31 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed) {
 }
 int main(int argc, char* argv[])
 {
-	
-    	struct sockaddr_in serv_addr;
-    	struct hostent *server;
+
+float d1;
+float d2;
+	coord cordA;
+	coord cordB;
+
+	cordA.H_MIN = 55;
+	cordA.H_MAX = 180;
+	cordA.S_MIN = 50;
+	cordA.S_MAX = 225;
+	cordA.V_MIN = 0;
+	cordA.V_MAX = 256;
+
+	cordB.H_MIN = 28;
+	cordB.H_MAX = 160;
+	cordB.S_MIN = 23;
+	cordB.S_MAX = 218;
+	cordB.V_MIN = 228;
+	cordB.V_MAX = 256;
+
+  struct sockaddr_in serv_addr;
+	struct hostent *server;
 	char command_list[]="fsrls";
 
-/*
+
 	//some boolean variables for different functionality within this
 	//program
 	bool trackObjects = true;
@@ -233,8 +263,10 @@ int main(int argc, char* argv[])
 	Mat HSV;
 	//matrix storage for binary threshold image
 	Mat threshold;
+	Mat threshold2;
 	//x and y values for the location of the object
 	int x = 0, y = 0;
+	int x1=0, y1 = 0;
 	//create slider bars for HSV filtering
 	createTrackbars();
 	//video capture object to acquire webcam feed
@@ -247,51 +279,68 @@ int main(int argc, char* argv[])
 	//start an infinite loop where webcam feed is copied to cameraFeed matrix
 	//all of our operations will be performed within this loop
 
-*/
+
 	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 	{
  	 perror("socket failed");
         exit(EXIT_FAILURE);
 	}
         server = gethostbyname("193.226.12.217");
-        
+
         serv_addr.sin_family = AF_INET;
 	bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);
     	serv_addr.sin_port = htons(PORT_NO);
-    
+
 	  if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
 		printf("ERROR connecting");
 		}
 		else
 		{
 		printf("Connected");
-		}
-	   
+	}
 
-	run(command_list);
-	
-/* while (1) {
 
-		/*
+	//run(command_list);
+
+ while (1) {
+
+
 		//store image to matrix
 		capture.read(cameraFeed);
 		if(!cameraFeed.empty()){
-		  
+
 		//convert frame from BGR to HSV colorspace
 		cvtColor(cameraFeed, HSV, COLOR_BGR2HSV);
 		//filter HSV image between values and store filtered image to
 		//threshold matrix
-		inRange(HSV, Scalar(H_MIN, S_MIN, V_MIN), Scalar(H_MAX, S_MAX, V_MAX), threshold);
-		inRange(HSV, Scalar(H_MIN_2, S_MIN_2, V_MIN_2), Scalar(H_MAX_2, S_MAX_2, V_MAX_2), threshold);
+		inRange(HSV, Scalar(cordA.H_MIN, cordA.S_MIN, cordA.V_MIN), Scalar(cordA.H_MAX, cordA.S_MAX, cordA.V_MAX), threshold);
+		inRange(HSV, Scalar(cordB.H_MIN, cordB.S_MIN, cordB.V_MIN), Scalar(cordB.H_MAX, cordB.S_MAX, cordB.V_MAX), threshold2);
 		//perform morphological operations on thresholded image to eliminate noise
 		//and emphasize the filtered object(s)
-		if (useMorphOps)
+		if (useMorphOps){
 			morphOps(threshold);
+			morphOps(threshold2);
+		}
 		//pass in thresholded frame to our object tracking function
 		//this function will return the x and y coordinates of the
 		//filtered object
-		if (trackObjects)
+		if (trackObjects){
 			trackFilteredObject(x, y, threshold, cameraFeed);
+			trackFilteredObject(x1, y1, threshold2, cameraFeed);
+		}
+
+		d1=distanta(x,y,x1,y1);
+		run("l");
+		d2=distanta(x,y,x1,y1);
+		if(d2<d1)
+		{
+			run("b");
+		}
+		else
+		{
+			run("r");
+		}
+
 
 		//show frames
 		imshow(windowName2, threshold);
@@ -306,28 +355,13 @@ int main(int argc, char* argv[])
 		{
 			printf("CameraFeed is empty\n");
 			exit(1);
-		} 
-
-		scanf("%c",&move_command);
-		
-		switch(move_command)
-		{
-		 case 'f':write(sockfd,"f\n",1);
-		          break;
-		 case 'b':write(sockfd,"b\n",1);
-                          break;
-		 case 'l':write(sockfd,"l\n",1);
-			  break;
-		 case 'r':write(sockfd,"r\n",1);
-		          break;
-	       	 case 's':write(sockfd,"s\n",1);
-			  break;
-
-		default:
-		  break;
 		}
-	}
-	*/
+printf("D:%f\n",distanta(x,y,x1,y1));
+		}
+
+
+
+
 
 	return 0;
 }
@@ -366,7 +400,12 @@ void run(char cmdlist[])
 		sleep(1);
 	}
 	write(sockfd,"s\n",1);
-	
 
 
+
+}
+
+float distanta(int x,int y, int x1,int y1)
+{
+	return sqrt(((x-x1) * (x-x1)) + ((y-y1) * (y-y1)));
 }
